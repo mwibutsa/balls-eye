@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  twitterHandle String   @unique
+  email         String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profileImage  String?
+  predictions Prediction[]
+
+}
+
+model Competition {
+  id     Int    @id
+  name   String @db.VarChar(42)
+  code   String @db.VarChar(10)
+  type   String @db.VarChar(32)
+  emblem String @db.VarChar(128)
+  matches Match[]
+}
+
+model Season {
+  id              Int      @id
+  startDate       DateTime
+  endDate         DateTime
+  currentMatchDay Int
+  winner          Int?     @default(dbgenerated("NULL"))
+  matches Match[]
+}
+
+model Area {
+  id   Int    @id
+  name String @db.VarChar(128)
+  code String @db.VarChar(128)
+  flag String @db.VarChar(128)
+  matches Match[]
+}
+
+model Team {
+    id Int @id
+    name String @db.VarChar(128)
+    shortName String @db.VarChar(32)
+    tla String @db.VarChar(5)
+    crest String @db.VarChar(128)
+    homeMatches Match[]  @relation("homeMatch")
+    awayMatches Match[] @relation("awayMatch")
+    predictions Prediction[]
+}
+
+model Match {
+  id Int @id
+  utcDate DateTime
+  status String @db.VarChar(42)
+  matchDay Int
+  stage String @db.VarChar(42)
+  group Int 
+  lastUpdated DateTime
+  score Json
+  referees Json[]
+  odds Json
+  homeTeamId Int
+  awayTeamId Int
+  homeTeam Team @relation(fields: [homeTeamId], references: [id],name: "homeMatch")
+  awayTeam Team @relation(fields: [awayTeamId], references: [id],name: "awayMatch")
+  seasonId Int
+  season Season @relation(fields: [seasonId],references: [id])
+  competitionId Int
+  competition Competition @relation(fields: [competitionId], references: [id])
+  areaId Int
+  area Area @relation(fields: [areaId],references: [id])
+  predictions Prediction[]
+}
+
+
+model Prediction { 
+  id Int @id @default(autoincrement())
+  userId  Int
+  user User @relation(fields: [userId], references: [id])
+  matchId Int
+  match Match @relation(fields: [matchId],references: [id])
+  predictedWinnerId Int 
+  predictedWinner Team @relation(fields: [predictedWinnerId], references: [id])
+  isCorrect Boolean?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
